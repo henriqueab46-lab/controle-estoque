@@ -1,0 +1,8 @@
+{
+"name": "Controle de Estoque",
+"short_name": "Estoque",
+"start_url": "/controle-estoque/",
+"display": "standalone",
+"background_color": "#ffffff",
+"theme_color": "#2b7cff"
+}
