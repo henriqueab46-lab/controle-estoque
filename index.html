@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Controle de Estoque</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .form-card {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .grid-inputs { grid-template-columns: 1fr; }
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            cursor: pointer;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .btn-outline:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .search-box {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            margin: 24px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .card.vencido { border-left-color: var(--danger); background-color: #fef2f2; }
+        .card.perto { border-left-color: var(--warning); background-color: #fffbeb; }
+        .card.baixo { border-left-color: var(--warning); border-left-style: dashed; }
+
+        .card h4 { margin-bottom: 8px; font-size: 1.1rem; }
+        .card p { font-size: 0.9rem; color: var(--text-light); margin-bottom: 4px; }
+        .card .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-edit { background: #e2e8f0; color: var(--text); }
+        .btn-delete { background: #fee2e2; color: var(--danger); }
+
+        /* Modal / Overlay para Estoque Completo */
+        #telaEstoque {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            z-index: 100;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📦 Controle de Estoque</h1>
+        <p>Gerencie seus produtos de forma simples e eficiente</p>
+    </header>
+
+    <button class="btn btn-outline" onclick="abrirEstoque()">📋 Ver Estoque Completo</button>
+
+    <div class="form-card">
+        <div class="grid-inputs">
+            <input id="codigo" placeholder="Código do produto">
+            <input id="nome" placeholder="Nome do produto">
+            <input type="date" id="data" title="Data de Validade">
+            <input type="number" id="quantidade" placeholder="Quantidade em estoque">
+        </div>
+        <button class="btn btn-primary" onclick="salvar()" id="btnSalvar">Salvar Produto</button>
+    </div>
+
+    <div class="search-box">
+        <input id="busca" placeholder="🔍 Buscar por nome ou código..." onkeyup="buscar()">
+    </div>
+
+    <div id="alertas">
+        <div id="secaoVencidos" style="display:none">
+            <h3 class="section-title">⚠️ Vencidos</h3>
+            <div id="vencidos" class="grid-cards"></div>
+        </div>
+
+        <div id="secaoPerto" style="display:none">
+            <h3 class="section-title">⏳ Perto de Vencer (30 dias)</h3>
+            <div id="perto" class="grid-cards"></div>
+        </div>
+
+        <div id="secaoBaixo" style="display:none">
+            <h3 class="section-title">📉 Estoque Baixo (< 10 unid.)</h3>
+            <div id="baixo" class="grid-cards"></div>
+        </div>
+    </div>
+
+    <h3 class="section-title">Todos os Produtos</h3>
+    <div id="lista" class="grid-cards"></div>
+</div>
+
+<!-- TELA ESTOQUE COMPLETO -->
+<div id="telaEstoque">
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Relatório de Estoque</h2>
+            <button class="btn btn-edit" onclick="fecharEstoque()">Voltar</button>
+        </div>
+        <div class="form-card">
+            <h3 id="totalEstoque"></h3>
+        </div>
+        <div id="listaEstoque" class="grid-cards"></div>
+    </div>
+</div>
+
+<script>
+    let produtos = JSON.parse(localStorage.getItem("produtos") || "[]");
+    let editandoIndex = -1;
+
+    // Elementos DOM
+    const el = {
+        codigo: document.getElementById("codigo"),
+        nome: document.getElementById("nome"),
+        data: document.getElementById("data"),
+        quantidade: document.getElementById("quantidade"),
+        busca: document.getElementById("busca"),
+        lista: document.getElementById("lista"),
+        vencidos: document.getElementById("vencidos"),
+        perto: document.getElementById("perto"),
+        baixo: document.getElementById("baixo"),
+        btnSalvar: document.getElementById("btnSalvar")
+    };
+
+    function salvar() {
+        const produto = {
+            codigo: el.codigo.value.trim(),
+            nome: el.nome.value.trim(),
+            data: el.data.value,
+            quantidade: parseInt(el.quantidade.value) || 0
+        };
+
+        if (!produto.nome || !produto.codigo) {
+            alert("Por favor, preencha pelo menos o nome e o código.");
+            return;
+        }
+
+        if (editandoIndex >= 0) {
+            produtos[editandoIndex] = produto;
+            editandoIndex = -1;
+            el.btnSalvar.innerText = "Salvar Produto";
+            el.btnSalvar.classList.remove('btn-warning');
+        } else {
+            produtos.push(produto);
+        }
+
+        atualizarStorage();
+        limparCampos();
+        renderizar();
+    }
+
+    function limparCampos() {
+        el.codigo.value = "";
+        el.nome.value = "";
+        el.data.value = "";
+        el.quantidade.value = "";
+        editandoIndex = -1;
+        el.btnSalvar.innerText = "Salvar Produto";
+    }
+
+    function editar(index) {
+        const p = produtos[index];
+        el.codigo.value = p.codigo;
+        el.nome.value = p.nome;
+        el.data.value = p.data;
+        el.quantidade.value = p.quantidade;
+        
+        editandoIndex = index;
+        el.btnSalvar.innerText = "Atualizar Produto";
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function excluir(index) {
+        if (confirm(`Deseja realmente excluir o produto "${produtos[index].nome}"?`)) {
+            produtos.splice(index, 1);
+            atualizarStorage();
+            renderizar();
+        }
+    }
+
+    function atualizarStorage() {
+        localStorage.setItem("produtos", JSON.stringify(produtos));
+    }
+
+    function criarCard(p, i, classeExtra = "") {
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+        const validade = p.data ? new Date(p.data) : null;
+        let statusBadge = "";
+        
+        if (validade) {
+            const diffDias = Math.ceil((validade - hoje) / (1000 * 60 * 60 * 24));
+            if (diffDias < 0) statusBadge = '<span class="badge badge-danger">VENCIDO</span>';
+            else if (diffDias <= 30) statusBadge = '<span class="badge badge-warning">VENCE EM BREVE</span>';
+        }
+
+        if (p.quantidade < 10) {
+            statusBadge += ' <span class="badge badge-warning">ESTOQUE BAIXO</span>';
+        }
+
+        return `
+            <div class="card ${classeExtra}">
+                <h4>${p.nome}</h4>
+                <p><strong>Cód:</strong> ${p.codigo}</p>
+                <p><strong>Qtd:</strong> ${p.quantidade}</p>
+                <p><strong>Validade:</strong> ${p.data ? new Date(p.data).toLocaleDateString('pt-BR') : 'Não informada'}</p>
+                ${statusBadge}
+                <div class="card-actions">
+                    <button class="btn btn-sm btn-edit" onclick="editar(${i})">Editar</button>
+                    <button class="btn btn-sm btn-delete" onclick="excluir(${i})">Excluir</button>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderizar() {
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+        
+        let htmlLista = "";
+        let htmlVencidos = "";
+        let htmlPerto = "";
+        let htmlBaixo = "";
+
+        produtos.forEach((p, i) => {
+            const cardNormal = criarCard(p, i);
+            htmlLista += cardNormal;
+
+            // Lógica de Alertas
+            if (p.data) {
+                const validade = new Date(p.data);
+                const diff = (validade - hoje) / (1000 * 60 * 60 * 24);
+                if (diff < 0) htmlVencidos += criarCard(p, i, "vencido");
+                else if (diff <= 30) htmlPerto += criarCard(p, i, "perto");
+            }
+
+            if (p.quantidade < 10) {
+                htmlBaixo += criarCard(p, i, "baixo");
+            }
+        });
+
+        el.lista.innerHTML = htmlLista || '<div class="empty-state">Nenhum produto cadastrado.</div>';
+        
+        // Atualizar seções de alerta
+        atualizarSecao("secaoVencidos", "vencidos", htmlVencidos);
+        atualizarSecao("secaoPerto", "perto", htmlPerto);
+        atualizarSecao("secaoBaixo", "baixo", htmlBaixo);
+    }
+
+    function atualizarSecao(secaoId, listaId, html) {
+        const secao = document.getElementById(secaoId);
+        const lista = document.getElementById(listaId);
+        if (html) {
+            secao.style.display = "block";
+            lista.innerHTML = html;
+        } else {
+            secao.style.display = "none";
+        }
+    }
+
+    function buscar() {
+        const termo = el.busca.value.toLowerCase();
+        const filtrados = produtos.filter(p => 
+            p.nome.toLowerCase().includes(termo) || 
+            p.codigo.toLowerCase().includes(termo)
+        );
+
+        el.lista.innerHTML = filtrados.length > 0 
+            ? filtrados.map((p, i) => criarCard(p, produtos.indexOf(p))).join('')
+            : '<div class="empty-state">Nenhum produto encontrado.</div>';
+    }
+
+    function abrirEstoque() {
+        let total = produtos.reduce((acc, p) => acc + (p.quantidade || 0), 0);
+        document.getElementById("totalEstoque").innerText = `Total de itens em estoque: ${total}`;
+        document.getElementById("listaEstoque").innerHTML = produtos.map((p, i) => criarCard(p, i)).join('');
+        document.getElementById("telaEstoque").style.display = "block";
+    }
+
+    function fecharEstoque() {
+        document.getElementById("telaEstoque").style.display = "none";
+    }
+
+    // Inicialização
+    renderizar();
+</script>
+
+</body>
+</html>
