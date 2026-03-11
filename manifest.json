@@ -1,8 +1,28 @@
 {
-"name": "Controle de Estoque",
-"short_name": "Estoque",
-"start_url": "/controle-estoque/",
-"display": "standalone",
-"background_color": "#ffffff",
-"theme_color": "#2b7cff"
+  "name": "Sistema de Controle de Estoque",
+  "short_name": "Estoque",
+  "description": "Aplicativo para controle simples de estoque com alerta de vencimento e quantidade.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "lang": "pt-BR",
+  "scope": "./",
+  "id": "controle-estoque-app",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
